@@ -42,64 +42,66 @@ class RolePermissionServiceProvider implements Provider
         // get current user
         $user = wp_get_current_user();
 
-        if(get_field('user_roles', 'option')) {
-            foreach(get_field('user_roles', 'option') as $role) {
-                $role_name_plain = 'aur_' . preg_replace("/[^a-zA-Z0-9_.]/", '', strtolower($role['user_role_name']));
+        if(is_admin()) {
+            if(get_field('user_roles', 'option')) {
+                foreach(get_field('user_roles', 'option') as $role) {
+                    $role_name_plain = 'aur_' . preg_replace("/[^a-zA-Z0-9_.]/", '', strtolower($role['user_role_name']));
 
-                // check if user role exist
-                if($wp_roles->is_role($role_name_plain)) {
-                    // add role
-                    add_role( $role_name_plain, $role_name_plain);
-                }
+                    // check if user role exist
+                    if($wp_roles->is_role($role_name_plain)) {
+                        // add role
+                        add_role( $role_name_plain, $role_name_plain);
+                    }
 
-                $getCurrentRole = get_role($role_name_plain);
-                if($role['user_role_permission']) {
-                    foreach($role['user_role_permission'] as $capabilities) {
-                        // add capabilities
-                        if($capabilities || !empty($capabilities)) {
-                            $getCurrentRole->add_cap($capabilities, true);
+                    $getCurrentRole = get_role($role_name_plain);
+                    if($role['user_role_permission']) {
+                        foreach($role['user_role_permission'] as $capabilities) {
+                            // add capabilities
+                            if($capabilities || !empty($capabilities)) {
+                                $getCurrentRole->add_cap($capabilities, true);
+                            }
                         }
-                    }
-                    $removeCurrentRolePermission = array_diff(array_keys($getCurrentRole->capabilities), $role['user_role_permission']);
-                    foreach($removeCurrentRolePermission as $removeCap) {
-                        // remove cabalities
-                        $getCurrentRole->remove_cap($removeCap);
-                    }
-                } else {
-                    // if there is no selected then it will remove all capabilities
-                    $getCaps = array_keys($getCurrentRole->capabilities);
-                    foreach($getCaps as $cap) {
-                        $getCurrentRole->remove_cap($cap);
-                    }
-                }
-
-                
-                if(in_array( 'aur_' . $role['user_role_name'], (array) $user->roles )) {
-                    // hide admin menu
-                    if($role['user_role_admin_menu']) {
-                    // if(array_intersect( $allowed_roles, (array) $user->roles )[1]) {
-                        // remove admin menu pages
-                        $acfAdminMenuIntersect = array_intersect($role['user_role_admin_menu'], $this->getAdminMenuList($menu));
-                        foreach($acfAdminMenuIntersect as $adminItem) {
-                            remove_menu_page( $adminItem );
+                        $removeCurrentRolePermission = array_diff(array_keys($getCurrentRole->capabilities), $role['user_role_permission']);
+                        foreach($removeCurrentRolePermission as $removeCap) {
+                            // remove cabalities
+                            $getCurrentRole->remove_cap($removeCap);
+                        }
+                    } else {
+                        // if there is no selected then it will remove all capabilities
+                        $getCaps = array_keys($getCurrentRole->capabilities);
+                        foreach($getCaps as $cap) {
+                            $getCurrentRole->remove_cap($cap);
                         }
                     }
 
-                    // hide yoast metabox in posts page
-                    if($role['user_role_others_yoast_metabox']) {
-                        // Remove page analysis columns from post lists, also SEO status on post editor
-                        add_filter( 'wpseo_use_page_analysis', '__return_false' );
-                        // Remove Yoast meta boxes
-                        add_action( 'add_meta_boxes', [$this, 'acf_user_role_disable_yoast_posts_metabox'], 100000 );
-                    }
-                }
-            }   
-        }
+                    
+                    if(in_array( 'aur_' . $role['user_role_name'], (array) $user->roles )) {
+                        // hide admin menu
+                        if($role['user_role_admin_menu']) {
+                        // if(array_intersect( $allowed_roles, (array) $user->roles )[1]) {
+                            // remove admin menu pages
+                            $acfAdminMenuIntersect = array_intersect($role['user_role_admin_menu'], $this->getAdminMenuList($menu));
+                            foreach($acfAdminMenuIntersect as $adminItem) {
+                                remove_menu_page( $adminItem );
+                            }
+                        }
 
-        // remove role based on acf repeater
-        $remove_role_list = array_diff($this->getWpUserRoleList($wp_roles), $this->getAcfUserRoleList());
-        foreach($remove_role_list as $role_list) {
-            remove_role($role_list);
+                        // hide yoast metabox in posts page
+                        if($role['user_role_others_yoast_metabox']) {
+                            // Remove page analysis columns from post lists, also SEO status on post editor
+                            add_filter( 'wpseo_use_page_analysis', '__return_false' );
+                            // Remove Yoast meta boxes
+                            add_action( 'add_meta_boxes', [$this, 'acf_user_role_disable_yoast_posts_metabox'], 100000 );
+                        }
+                    }
+                }   
+            }
+
+            // remove role based on acf repeater
+            $remove_role_list = array_diff($this->getWpUserRoleList($wp_roles), $this->getAcfUserRoleList());
+            foreach($remove_role_list as $role_list) {
+                remove_role($role_list);
+            }
         }
     }
 
@@ -185,13 +187,16 @@ class RolePermissionServiceProvider implements Provider
 
     public function acf_load_user_role_admin_menu($field) {
         global $menu;
-
-        $field['choices'] = array_combine($this->getAdminMenuList($menu), $this->getAdminMenuList($menu));
+        if(is_admin()) {
+            $field['choices'] = array_combine($this->getAdminMenuList($menu), $this->getAdminMenuList($menu));
+        }
         return $field;
     }
 
     public function acf_load_user_role_admin_bar($field) {
-        $field['choices'] = array_combine(array_keys($this->adminBarNodes), array_keys($this->adminBarNodes));
+        if(is_admin()) {
+            $field['choices'] = array_combine(array_keys($this->adminBarNodes), array_keys($this->adminBarNodes));
+        }
         return $field;
     }
 
