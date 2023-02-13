@@ -1,0 +1,37 @@
+{
+  "name": "copiadigital/acf-user-role",
+  "type": "wordpress-plugin",
+  "license": "MIT",
+  "description": "The last user role you'll ever need",
+  "homepage": "https://github.com/copiadigital/acf-user-role",
+  "authors": [
+    {
+      "name": "Chris Willmott",
+      "email": "chris.willmott@copiadigital.com",
+      "homepage": "https://github.com/teaforchris"
+    },
+    {
+      "name": "Jayson Garcia",
+      "email": "jayson.garcia@copiadigital.com",
+      "homepage": "https://github.com/hallowichig0"
+    },
+    {
+      "name": "Copia Digital Dev Team",
+      "email": "info@copiadigital.com",
+      "homepage": "https://github.com/copiadigital"
+    }
+  ],
+  "keywords": [
+    "wordpress"
+  ],
+  "autoload": {
+    "psr-4": {
+      "AcfUserRole\\": "src/"
+    }
+  },
+  "require": {
+    "php": "^7.1"
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true
+}
