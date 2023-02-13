@@ -50,6 +50,7 @@ class FieldsServiceProvider implements Provider
                 'layout'    => 'block',
                 'parent'    => 'group_user_role_settings',
                 'required'  => 0,
+                'collapsed' => 'field_user_role_settings_user_roles_user_role_name',
                 'min'   => '',
                 'max'   => '',
                 'button_label'  => 'Add Role',
@@ -87,6 +88,35 @@ class FieldsServiceProvider implements Provider
                     ],
                     'choices' => array_combine($getCapabilities, $getCapabilities),
                     'allow_custom' => 0,
+                    'save_custom' => 0,
+                    'default_value' => [],
+                    'layout' => 'vertical',
+                    'toggle' => 0,
+                    'return_format' => 'value',
+                    'parent'       => 'field_user_role_settings_user_roles',
+                ));
+
+                acf_add_local_field(array(
+                    'key'          => 'field_user_role_settings_user_roles_user_role_custom_permission_tab',
+                    'label'        => 'Custom Role Permission',
+                    'name'         => '',
+                    'type'         => 'tab',
+                    'parent'       => 'field_user_role_settings_user_roles',
+                ));
+
+                acf_add_local_field(array(
+                    'key'          => 'field_user_role_settings_user_roles_user_role_custom_permission',
+                    'label'        => 'Custom Role Permission',
+                    'name'         => 'user_role_custom_permission',
+                    'type'         => 'checkbox',
+                    'required'     => 0,
+                    'wrapper' => [
+                        'width' => '',
+                        'class' => '',
+                        'id' => '',
+                    ],
+                    'choices' => [],
+                    'allow_custom' => 1,
                     'save_custom' => 0,
                     'default_value' => [],
                     'layout' => 'vertical',

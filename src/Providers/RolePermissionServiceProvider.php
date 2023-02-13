@@ -5,14 +5,17 @@ namespace AcfUserRole\Providers;
 class RolePermissionServiceProvider implements Provider
 {
     private $adminBarNodes;
+    private $parentMenus = [];
     
     public function __construct()
     {
         add_filter('admin_init', [$this, 'acf_user_role_admin_init']);
         add_action('admin_bar_menu', [$this, 'acf_user_role_admin_bar'], 999);
-        add_filter('acf/load_field/name=user_role_admin_menu', [$this, 'acf_load_user_role_admin_menu']);
+        add_action('admin_menu', [$this, 'build_admin_menu_list'], 9999);
+        add_filter('acf/load_field/key=field_user_role_settings_user_roles_user_role_admin_menu', [$this, 'acf_user_role_load_admin_menu']);
         // add_filter('acf/load_field/name=user_role_admin_sub_menu', array($this, 'acf_load_user_role_admin_sub_menu'));
-        add_filter('acf/prepare_field/name=user_role_admin_bar', [$this, 'acf_load_user_role_admin_bar']);
+        add_filter('acf/prepare_field/key=field_user_role_settings_user_roles_user_role_admin_bar', [$this, 'acf_user_role_load_admin_bar']);
+        add_filter('acf/validate_value/key=field_user_role_settings_user_roles_user_role_name', [$this, 'acf_user_role_unique_role_name_validation'], 20, 4);
         add_filter('admin_head', [$this, 'acf_user_role_disable_yoast_taxonomy_metabox']);
     }
     
@@ -32,11 +35,7 @@ class RolePermissionServiceProvider implements Provider
                 foreach(get_field('user_roles', 'option') as $role) {
                     $role_name_plain = 'aur_' . preg_replace("/[^a-zA-Z0-9_.]/", '', strtolower($role['user_role_name']));
 
-                    // check if user role exist
-                    if($wp_roles->is_role($role_name_plain)) {
-                        // add role
-                        add_role( $role_name_plain, $role_name_plain);
-                    }
+                    add_role( $role_name_plain, $role_name_plain);
 
                     $getCurrentRole = get_role($role_name_plain);
                     if($role['user_role_permission']) {
@@ -58,14 +57,25 @@ class RolePermissionServiceProvider implements Provider
                             $getCurrentRole->remove_cap($cap);
                         }
                     }
-
                     
+                    if($role['user_role_custom_permission']) {
+                        foreach($role['user_role_custom_permission'] as $capabilities) {
+                            if($capabilities || !empty($capabilities)) {
+                                // add custom permission
+                                $getCurrentRole->add_cap($capabilities, true);
+                            } else {
+                                // remove custom permission
+                                $getCurrentRole->remove_cap($capabilities);
+                            }
+                        }
+                    }
+
                     if(in_array( 'aur_' . $role['user_role_name'], (array) $user->roles )) {
                         // hide admin menu
                         if($role['user_role_admin_menu']) {
                         // if(array_intersect( $allowed_roles, (array) $user->roles )[1]) {
                             // remove admin menu pages
-                            $acfAdminMenuIntersect = array_intersect($role['user_role_admin_menu'], $this->getAdminMenuList($menu));
+                            $acfAdminMenuIntersect = array_intersect($role['user_role_admin_menu'], $this->build_admin_menu_list());
                             foreach($acfAdminMenuIntersect as $adminItem) {
                                 remove_menu_page( $adminItem );
                             }
@@ -90,15 +100,27 @@ class RolePermissionServiceProvider implements Provider
         }
     }
 
-    public function getAdminMenuList($menu) {
-        $getAdminMenuArray = [];
+    // public function getAdminMenuList($menu) {
+    //     global $menu;
+    //     $getAdminMenuArray = [];
+    //     foreach($menu as $item) {
+    //         if($item[0] !== '' && $item[4] !== 'wp-menu-separator') {
+    //             $getAdminMenuArray[] = $item[2];
+    //         }
+    //     }
+
+    //     return $getAdminMenuArray;
+    // }
+
+    public function build_admin_menu_list() {
+        global $menu;
         foreach($menu as $item) {
             if($item[0] !== '' && $item[4] !== 'wp-menu-separator') {
-                $getAdminMenuArray[] = $item[2];
+                $this->parentMenus[] = $item[2];
             }
         }
-
-        return $getAdminMenuArray;
+        
+        return $this->parentMenus;
     }
 
     public function getAcfUserRoleList() {
@@ -154,19 +176,81 @@ class RolePermissionServiceProvider implements Provider
         }
     }
 
-    public function acf_load_user_role_admin_menu($field) {
-        global $menu;
+    public function acf_user_role_load_admin_menu($field) {
+        // global $menu;
         if(is_admin()) {
-            $field['choices'] = array_combine($this->getAdminMenuList($menu), $this->getAdminMenuList($menu));
+            // $field['choices'] = array_combine($this->getAdminMenuList($menu), $this->getAdminMenuList($menu));
+            $field['choices'] = array_combine($this->parentMenus, $this->parentMenus);
+            
         }
         return $field;
     }
 
-    public function acf_load_user_role_admin_bar($field) {
+    public function acf_user_role_load_admin_bar($field) {
         if(is_admin()) {
             $field['choices'] = array_combine(array_keys($this->adminBarNodes), array_keys($this->adminBarNodes));
         }
         return $field;
+    }
+
+    function acf_user_role_unique_role_name_validation($valid, $value, $field, $input){
+    
+        if (!$valid) {
+            return $valid;
+        }
+          
+        // get list of array indexes from $input
+        // [ <= this fixes my IDE, it has problems with unmatched brackets
+        preg_match_all('/\[([^\]]+)\]/', $input, $matches);
+        if (!count($matches[1])) {
+            // this should actually never happen
+            return $valid;
+        }
+        $matches = $matches[1];
+        
+        // walk the acf input to find the repeater and current row      
+        $array = $_POST['acf'];
+        
+        $repeater_key = false;
+        $repeater_value = false;
+        $row_key = false;
+        $row_value = false;
+        $field_key = false;
+        $field_value = false;
+        
+        for ($i = 0; $i < count($matches); $i++) {
+            if (isset($array[$matches[$i]])) {
+                $repeater_key = $row_key;
+                $repeater_value = $row_value;
+                $row_key = $field_key;
+                $row_value = $field_value;
+                $field_key = $matches[$i];
+                $field_value = $array[$matches[$i]];
+                if ($field_key == $field['key']) {
+                    break;
+                }
+                $array = $array[$matches[$i]];
+            }
+        }
+        
+        if (!$repeater_key) {
+            // this should not happen, but better safe than sorry
+            return $valid;
+        }
+        
+        // look for duplicate values in the repeater
+        foreach($repeater_value as $index => $row) {
+            if($index != $row_key && strtolower($row[$field_key]) == strtolower($value)) {
+                // this is a different row with the same value
+                $valid = 'This value is not unique';
+            }
+            if($index == $row_key && preg_match("/[^a-zA-Z0-9_.]/", $row[$field_key])) {
+                $valid = 'This value doesnt accept any special character or spacing';
+            }
+        }
+    
+        return $valid;
+    
     }
 
     // public function acf_load_user_role_admin_sub_menu($field) {
