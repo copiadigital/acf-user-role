@@ -23,7 +23,7 @@ class OptionsServiceProvider implements Provider
                 'menu_slug' 	=> 'acf-options-user-role-settings',
                 'capability'	=> 'edit_theme_options',
                 'redirect'		=> false,
-                'icon_url' => 'dashicons-admin-generic',
+                'icon_url' => 'dashicons-groups',
             ));
     
         }
