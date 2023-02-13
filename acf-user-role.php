@@ -15,3 +15,15 @@ $clover = new AcfUserRole\Providers\AcfUserRoleServiceProvider;
 $clover->register();
 
 add_action('init', [$clover, 'boot']);
+
+add_action('plugins_loaded', function() {
+    if (!class_exists('acf') && !class_exists('acf_pro') && !function_exists('acf_add_options_page')) {
+        deactivate_plugins('acf-user-role/acf-user-role.php');
+        add_action( 'admin_notices', function() {
+            $class = 'notice notice-error';
+            $message = __( 'ACF Class or ACF Pro not found!', 'acf-user-role' );
+  
+            printf( '<div class="%1$s"><p>%2$s</p></div>', esc_attr( $class ), esc_html( $message ) );
+        } );
+    }
+});

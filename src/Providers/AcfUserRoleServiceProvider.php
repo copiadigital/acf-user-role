@@ -7,6 +7,8 @@ class AcfUserRoleServiceProvider implements Provider
     protected function providers()
     {
         return [
+            OptionsServiceProvider::class,
+            FieldsServiceProvider::class,
             RolePermissionServiceProvider::class,
         ];
     }
