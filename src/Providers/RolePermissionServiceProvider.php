@@ -10,8 +10,9 @@ class RolePermissionServiceProvider implements Provider
     public function __construct()
     {
         add_filter('admin_init', [$this, 'acf_user_role_admin_init']);
-        add_action('admin_bar_menu', [$this, 'acf_user_role_admin_bar'], 999);
         add_action('admin_menu', [$this, 'build_admin_menu_list'], 9999);
+        add_action('admin_menu', [$this, 'acf_user_role_admin_menu'], 9999);
+        add_action('admin_bar_menu', [$this, 'acf_user_role_admin_bar'], 999);
         add_filter('acf/load_field/key=field_user_role_settings_user_roles_user_role_admin_menu', [$this, 'acf_user_role_load_admin_menu']);
         // add_filter('acf/load_field/name=user_role_admin_sub_menu', array($this, 'acf_load_user_role_admin_sub_menu'));
         add_filter('acf/prepare_field/key=field_user_role_settings_user_roles_user_role_admin_bar', [$this, 'acf_user_role_load_admin_bar']);
@@ -25,7 +26,7 @@ class RolePermissionServiceProvider implements Provider
     }
 
     public function acf_user_role_admin_init() {
-        global $wp_roles, $submenu, $menu;
+        global $wp_roles;
 
         // get current user
         $user = wp_get_current_user();
@@ -71,22 +72,12 @@ class RolePermissionServiceProvider implements Provider
                     }
 
                     if(in_array( 'aur_' . $role['user_role_name'], (array) $user->roles )) {
-                        // hide admin menu
-                        if($role['user_role_admin_menu']) {
-                        // if(array_intersect( $allowed_roles, (array) $user->roles )[1]) {
-                            // remove admin menu pages
-                            $acfAdminMenuIntersect = array_intersect($role['user_role_admin_menu'], $this->build_admin_menu_list());
-                            foreach($acfAdminMenuIntersect as $adminItem) {
-                                remove_menu_page( $adminItem );
-                            }
-                        }
-
                         // hide yoast metabox in posts page
                         if($role['user_role_others_yoast_metabox']) {
                             // Remove page analysis columns from post lists, also SEO status on post editor
                             add_filter( 'wpseo_use_page_analysis', '__return_false' );
                             // Remove Yoast meta boxes
-                            add_action( 'add_meta_boxes', [$this, 'acf_user_role_disable_yoast_posts_metabox'], 100000 );
+                            add_action( 'add_meta_boxes', [$this, 'acf_user_role_disable_yoast_posts_metabox'], 100 );
                         }
                     }
                 }   
@@ -144,6 +135,38 @@ class RolePermissionServiceProvider implements Provider
             }
         }
         return $all_roles_array;
+    }
+
+    public function acf_user_role_admin_menu( $wp_admin_bar ) {
+        global $wp_roles;
+
+        // get current user
+        $user = wp_get_current_user();
+
+        if (!function_exists('acf_add_options_page')) {
+            return;
+        }
+
+        if(get_field('user_roles', 'option')) {
+            foreach(get_field('user_roles', 'option') as $role) {
+                $role_name_plain = 'aur_' . preg_replace("/[^a-zA-Z0-9_.]/", '', strtolower($role['user_role_name']));
+                
+                if($role['user_role_admin_menu']) {
+                    if(in_array( 'aur_' . $role['user_role_name'], (array) $user->roles )) {
+                        // if(array_intersect( $allowed_roles, (array) $user->roles )[1]) {
+                        // remove admin menu pages
+                        if($this->build_admin_menu_list()) {
+                            $acfAdminMenuIntersect = array_intersect($role['user_role_admin_menu'], $this->build_admin_menu_list());
+                            if($acfAdminMenuIntersect) {
+                                foreach($acfAdminMenuIntersect as $adminItem) {
+                                    remove_menu_page( $adminItem );
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     public function acf_user_role_admin_bar( $wp_admin_bar ) {
