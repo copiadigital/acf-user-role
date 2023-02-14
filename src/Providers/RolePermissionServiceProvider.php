@@ -17,7 +17,7 @@ class RolePermissionServiceProvider implements Provider
         // add_filter('acf/load_field/name=user_role_admin_sub_menu', array($this, 'acf_load_user_role_admin_sub_menu'));
         add_filter('acf/prepare_field/key=field_user_role_settings_user_roles_user_role_admin_bar', [$this, 'acf_user_role_load_admin_bar']);
         add_filter('acf/validate_value/key=field_user_role_settings_user_roles_user_role_name', [$this, 'acf_user_role_unique_role_name_validation'], 20, 4);
-        add_filter('admin_head', [$this, 'acf_user_role_disable_yoast_taxonomy_metabox']);
+        add_filter('admin_head', [$this, 'acf_user_role_disable_yoast_metabox']);
     }
     
     public function register()
@@ -68,16 +68,6 @@ class RolePermissionServiceProvider implements Provider
                                 // remove custom permission
                                 $getCurrentRole->remove_cap($capabilities);
                             }
-                        }
-                    }
-
-                    if(in_array( 'aur_' . $role['user_role_name'], (array) $user->roles )) {
-                        // hide yoast metabox in posts page
-                        if($role['user_role_others_yoast_metabox']) {
-                            // Remove page analysis columns from post lists, also SEO status on post editor
-                            add_filter( 'wpseo_use_page_analysis', '__return_false' );
-                            // Remove Yoast meta boxes
-                            add_action( 'add_meta_boxes', [$this, 'acf_user_role_disable_yoast_posts_metabox'], 100 );
                         }
                     }
                 }   
@@ -296,7 +286,7 @@ class RolePermissionServiceProvider implements Provider
         remove_meta_box( 'wpseo_meta', '', 'normal' );
     }
 
-    public function acf_user_role_disable_yoast_taxonomy_metabox() {
+    public function acf_user_role_disable_yoast_metabox() {
         global $wp_roles, $pagenow;
 
         // get current user
@@ -307,15 +297,18 @@ class RolePermissionServiceProvider implements Provider
         }
 
         if (is_admin()) {
-            if($pagenow === 'term.php') {
+            if($pagenow === 'term.php' || $pagenow === 'post.php' || $pagenow === 'post-new.php') {
                 if(get_field('user_roles', 'option')) {
                     foreach(get_field('user_roles', 'option') as $role) {
                         $role_name_plain = 'aur_' . preg_replace("/[^a-zA-Z0-9_.]/", '', strtolower($role['user_role_name']));
 
                         if($role['user_role_others_yoast_metabox']) {
                             if(in_array( 'aur_' . $role['user_role_name'], (array) $user->roles )) {
-                                // hide yoast metabox in posts page
-                                echo '<style type="text/css" id="acf-user-role-yoast-taxonomy-metabox-hide">#wpseo_meta { display: none }</style>';
+                                // remove page analysis columns from post lists, also SEO status on post editor
+                                add_filter( 'wpseo_use_page_analysis', '__return_false' );
+
+                                // hide yoast metabox
+                                echo '<style type="text/css" id="acf-user-role-yoast-metabox-hide">#wpseo_meta { display: none }</style>';
                             }
                         }
                     }
