@@ -103,11 +103,11 @@ class RolePermissionServiceProvider implements Provider
 
     public function getWpUserRoleList($wp_roles) {
         $all_roles_array = [];
-        $all_roles = $wp_roles->roles;
+        $all_roles = array_keys($wp_roles->role_names);
         foreach($all_roles as $role) {
-            if(substr( $role['name'], 0, 3 ) === 'aur') {
+            if(substr( $role, 0, 3 ) === 'aur') {
                 // get only the roles that start with aur
-                $all_roles_array[] = $role['name'];
+                $all_roles_array[] = $role;
             }
         }
         return $all_roles_array;
@@ -189,7 +189,6 @@ class RolePermissionServiceProvider implements Provider
     }
 
     public function acf_user_role_unique_role_name_validation($valid, $value, $field, $input) {
-    
         if (!$valid) {
             return $valid;
         }
