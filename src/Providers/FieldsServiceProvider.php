@@ -9,6 +9,11 @@ class FieldsServiceProvider implements Provider
         add_action('acf/init', [$this, 'acf_user_role_fields']);
     }
 
+    public function register()
+    {
+        //
+    }
+
     public function acf_user_role_fields() {
         if (!function_exists('acf_add_options_page')) {
             return;

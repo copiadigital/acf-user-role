@@ -19,6 +19,11 @@ class RolePermissionServiceProvider implements Provider
         add_filter('admin_head', [$this, 'acf_user_role_disable_yoast_metabox']);
     }
 
+    public function register()
+    {
+        //
+    }
+
     public function acf_user_role_admin_init() {
         global $wp_roles;
 
