@@ -8,11 +8,6 @@ class FieldsServiceProvider implements Provider
     {
         add_action('acf/init', [$this, 'acf_user_role_fields']);
     }
-    
-    public function register()
-    {
-       //
-    }
 
     public function acf_user_role_fields() {
         if (!function_exists('acf_add_options_page')) {
@@ -153,35 +148,6 @@ class FieldsServiceProvider implements Provider
                     'return_format' => 'value',
                     'parent'       => 'field_user_role_settings_user_roles',
                 ));
-
-                // acf_add_local_field(array(
-                //     'key'          => 'field_user_role_settings_user_roles_user_role_admin_sub_menu_tab',
-                //     'label'        => 'Hide Admin Sub Menu',
-                //     'name'         => '',
-                //     'type'         => 'tab',
-                //     'parent'       => 'field_user_role_settings_user_roles',
-                // ));
-
-                // acf_add_local_field(array(
-                //     'key'          => 'field_user_role_settings_user_roles_user_role_admin_sub_menu',
-                //     'label'        => 'Hide Admin Sub Menu',
-                //     'name'         => 'user_role_admin_sub_menu',
-                //     'type'         => 'checkbox',
-                //     'required'     => 0,
-                //     'wrapper' => [
-                //         'width' => '',
-                //         'class' => '',
-                //         'id' => '',
-                //     ],
-                //     'choices' => [],
-                //     'allow_custom' => 0,
-                //     'save_custom' => 0,
-                //     'default_value' => [],
-                //     'layout' => 'vertical',
-                //     'toggle' => 0,
-                //     'return_format' => 'value',
-                //     'parent'       => 'field_user_role_settings_user_roles',
-                // ));
 
                 acf_add_local_field(array(
                     'key'          => 'field_user_role_settings_user_roles_user_role_admin_bar_tab',

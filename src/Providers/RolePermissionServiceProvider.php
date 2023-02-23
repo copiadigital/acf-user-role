@@ -14,15 +14,9 @@ class RolePermissionServiceProvider implements Provider
         add_action('admin_menu', [$this, 'acf_user_role_admin_menu'], 9999);
         add_action('admin_bar_menu', [$this, 'acf_user_role_admin_bar'], 999);
         add_filter('acf/load_field/key=field_user_role_settings_user_roles_user_role_admin_menu', [$this, 'acf_user_role_load_admin_menu']);
-        // add_filter('acf/load_field/name=user_role_admin_sub_menu', array($this, 'acf_load_user_role_admin_sub_menu'));
         add_filter('acf/prepare_field/key=field_user_role_settings_user_roles_user_role_admin_bar', [$this, 'acf_user_role_load_admin_bar']);
         add_filter('acf/validate_value/key=field_user_role_settings_user_roles_user_role_name', [$this, 'acf_user_role_unique_role_name_validation'], 20, 4);
         add_filter('admin_head', [$this, 'acf_user_role_disable_yoast_metabox']);
-    }
-    
-    public function register()
-    {
-       //
     }
 
     public function acf_user_role_admin_init() {
@@ -81,18 +75,6 @@ class RolePermissionServiceProvider implements Provider
         }
     }
 
-    // public function getAdminMenuList($menu) {
-    //     global $menu;
-    //     $getAdminMenuArray = [];
-    //     foreach($menu as $item) {
-    //         if($item[0] !== '' && $item[4] !== 'wp-menu-separator') {
-    //             $getAdminMenuArray[] = $item[2];
-    //         }
-    //     }
-
-    //     return $getAdminMenuArray;
-    // }
-
     public function build_admin_menu_list() {
         global $menu;
         foreach($menu as $item) {
@@ -100,7 +82,6 @@ class RolePermissionServiceProvider implements Provider
                 $this->parentMenus[] = $item[2];
             }
         }
-        
         return $this->parentMenus;
     }
 
@@ -143,7 +124,6 @@ class RolePermissionServiceProvider implements Provider
                 
                 if($role['user_role_admin_menu']) {
                     if(in_array( 'aur_' . $role['user_role_name'], (array) $user->roles )) {
-                        // if(array_intersect( $allowed_roles, (array) $user->roles )[1]) {
                         // remove admin menu pages
                         if($this->build_admin_menu_list()) {
                             $acfAdminMenuIntersect = array_intersect($role['user_role_admin_menu'], $this->build_admin_menu_list());
@@ -190,11 +170,8 @@ class RolePermissionServiceProvider implements Provider
     }
 
     public function acf_user_role_load_admin_menu($field) {
-        // global $menu;
         if(is_admin()) {
-            // $field['choices'] = array_combine($this->getAdminMenuList($menu), $this->getAdminMenuList($menu));
             $field['choices'] = array_combine($this->parentMenus, $this->parentMenus);
-            
         }
         return $field;
     }
@@ -206,7 +183,7 @@ class RolePermissionServiceProvider implements Provider
         return $field;
     }
 
-    function acf_user_role_unique_role_name_validation($valid, $value, $field, $input){
+    public function acf_user_role_unique_role_name_validation($valid, $value, $field, $input) {
     
         if (!$valid) {
             return $valid;
@@ -263,24 +240,7 @@ class RolePermissionServiceProvider implements Provider
         }
     
         return $valid;
-    
     }
-
-    // public function acf_load_user_role_admin_sub_menu($field) {
-    //     global $submenu, $wp_admin_bar;
-    //     // dd($wp_admin_bar);
-    //     $getAdminSubMenuArray = [];
-    //     foreach($submenu as $key => $item) {
-    //         if($key !== '') {
-    //             // $getAdminSubMenuArray[] = $item[2];
-    //             // unset($item);
-    //         }
-    //     }
-
-    //     // dd($getAdminSubMenuArray);
-    //     // $field['choices'] = array_combine($this->getAdminMenuList($menu), $this->getAdminMenuList($menu));
-    //     return $field;
-    // }
 
     public function acf_user_role_disable_yoast_posts_metabox() {
         remove_meta_box( 'wpseo_meta', '', 'normal' );
