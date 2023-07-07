@@ -123,18 +123,20 @@ class RolePermissionServiceProvider implements Provider
             return;
         }
 
-        if(get_field('user_roles', 'option')) {
-            foreach(get_field('user_roles', 'option') as $role) {
-                $role_name_plain = 'aur_' . preg_replace("/[^a-zA-Z0-9_.]/", '', strtolower($role['user_role_name']));
-                
-                if($role['user_role_admin_menu']) {
-                    if(in_array( 'aur_' . $role['user_role_name'], (array) $user->roles )) {
-                        // remove admin menu pages
-                        if($this->build_admin_menu_list()) {
-                            $acfAdminMenuIntersect = array_intersect($role['user_role_admin_menu'], $this->build_admin_menu_list());
-                            if($acfAdminMenuIntersect) {
-                                foreach($acfAdminMenuIntersect as $adminItem) {
-                                    remove_menu_page( $adminItem );
+        if(is_admin()) {
+            if(get_field('user_roles', 'option')) {
+                foreach(get_field('user_roles', 'option') as $role) {
+                    $role_name_plain = 'aur_' . preg_replace("/[^a-zA-Z0-9_.]/", '', strtolower($role['user_role_name']));
+                    
+                    if($role['user_role_admin_menu']) {
+                        if(in_array( 'aur_' . $role['user_role_name'], (array) $user->roles )) {
+                            // remove admin menu pages
+                            if($this->build_admin_menu_list()) {
+                                $acfAdminMenuIntersect = array_intersect($role['user_role_admin_menu'], $this->build_admin_menu_list());
+                                if($acfAdminMenuIntersect) {
+                                    foreach($acfAdminMenuIntersect as $adminItem) {
+                                        remove_menu_page( $adminItem );
+                                    }
                                 }
                             }
                         }
@@ -145,7 +147,7 @@ class RolePermissionServiceProvider implements Provider
     }
 
     public function acf_user_role_admin_bar( $wp_admin_bar ) {
-        global $wp_roles;
+        global $wp_roles, $pagenow, $typenow;
 
         // pass wp_admin_bar->get_nodes data
         $this->adminBarNodes = $wp_admin_bar->get_nodes();
@@ -156,17 +158,53 @@ class RolePermissionServiceProvider implements Provider
         if (!function_exists('acf_add_options_page')) {
             return;
         }
-
-        if(get_field('user_roles', 'option')) {
-            foreach(get_field('user_roles', 'option') as $role) {
-                $role_name_plain = 'aur_' . preg_replace("/[^a-zA-Z0-9_.]/", '', strtolower($role['user_role_name']));
-                
-                if($role['user_role_admin_bar']) {
-                    if(in_array( 'aur_' . $role['user_role_name'], (array) $user->roles )) {
-                        // remove admin bar
-                        $acfAdminbarIntersect = array_intersect($role['user_role_admin_bar'], array_keys($this->adminBarNodes));
-                        foreach($acfAdminbarIntersect as $adminItem) {
-                            $wp_admin_bar->remove_menu($adminItem);
+        
+        if(class_exists('ACFE')) {
+            if(($pagenow === 'post.php' || $pagenow === 'post-new.php') && $typenow === 'acf-field-group') {
+                if(get_field('user_roles', 'option')) {
+                    foreach(get_field('user_roles', 'option') as $role) {
+                        $role_name_plain = 'aur_' . preg_replace("/[^a-zA-Z0-9_.]/", '', strtolower($role['field_user_role_settings_user_roles_user_role_name']));
+                        
+                        if($role['field_user_role_settings_user_roles_user_role_admin_bar']) {
+                            if(in_array( 'aur_' . $role['field_user_role_settings_user_roles_user_role_name'], (array) $user->roles )) {
+                                // remove admin bar
+                                $acfAdminbarIntersect = array_intersect($role['field_user_role_settings_user_roles_user_role_admin_bar'], array_keys($this->adminBarNodes));
+                                foreach($acfAdminbarIntersect as $adminItem) {
+                                    $wp_admin_bar->remove_menu($adminItem);
+                                }
+                            }
+                        }
+                    }
+                }
+            } else {
+                if(get_field('user_roles', 'option')) {
+                    foreach(get_field('user_roles', 'option') as $role) {
+                        $role_name_plain = 'aur_' . preg_replace("/[^a-zA-Z0-9_.]/", '', strtolower($role['user_role_name']));
+                        
+                        if($role['user_role_admin_bar']) {
+                            if(in_array( 'aur_' . $role['user_role_name'], (array) $user->roles )) {
+                                // remove admin bar
+                                $acfAdminbarIntersect = array_intersect($role['user_role_admin_bar'], array_keys($this->adminBarNodes));
+                                foreach($acfAdminbarIntersect as $adminItem) {
+                                    $wp_admin_bar->remove_menu($adminItem);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            if(get_field('user_roles', 'option')) {
+                foreach(get_field('user_roles', 'option') as $role) {
+                    $role_name_plain = 'aur_' . preg_replace("/[^a-zA-Z0-9_.]/", '', strtolower($role['user_role_name']));
+                    
+                    if($role['user_role_admin_bar']) {
+                        if(in_array( 'aur_' . $role['user_role_name'], (array) $user->roles )) {
+                            // remove admin bar
+                            $acfAdminbarIntersect = array_intersect($role['user_role_admin_bar'], array_keys($this->adminBarNodes));
+                            foreach($acfAdminbarIntersect as $adminItem) {
+                                $wp_admin_bar->remove_menu($adminItem);
+                            }
                         }
                     }
                 }
@@ -192,7 +230,7 @@ class RolePermissionServiceProvider implements Provider
         if (!$valid) {
             return $valid;
         }
-          
+        
         // get list of array indexes from $input
         // [ <= this fixes my IDE, it has problems with unmatched brackets
         preg_match_all('/\[([^\]]+)\]/', $input, $matches);
@@ -251,7 +289,7 @@ class RolePermissionServiceProvider implements Provider
     }
 
     public function acf_user_role_disable_yoast_metabox() {
-        global $wp_roles, $pagenow;
+        global $wp_roles, $pagenow, $typenow;
 
         // get current user
         $user = wp_get_current_user();
@@ -261,7 +299,7 @@ class RolePermissionServiceProvider implements Provider
         }
 
         if (is_admin()) {
-            if($pagenow === 'term.php' || $pagenow === 'post.php' || $pagenow === 'post-new.php') {
+            if(($pagenow === 'term.php' || $pagenow === 'post.php' || $pagenow === 'post-new.php') && $typenow !== 'acf-field-group') {
                 if(get_field('user_roles', 'option')) {
                     foreach(get_field('user_roles', 'option') as $role) {
                         $role_name_plain = 'aur_' . preg_replace("/[^a-zA-Z0-9_.]/", '', strtolower($role['user_role_name']));
