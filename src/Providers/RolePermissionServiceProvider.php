@@ -26,7 +26,6 @@ class RolePermissionServiceProvider implements Provider
 
     public function acf_user_role_admin_init() {
         global $wp_roles;
-
         // get current user
         $user = wp_get_current_user();
 
@@ -34,8 +33,9 @@ class RolePermissionServiceProvider implements Provider
             if(get_field('user_roles', 'option')) {
                 foreach(get_field('user_roles', 'option') as $role) {
                     $role_name_plain = 'aur_' . preg_replace("/[^a-zA-Z0-9_.]/", '', strtolower($role['user_role_name']));
+                    $role_name_display = ucwords(preg_replace("/[\-_]/", " ", strtolower($role['user_role_name'])));
 
-                    add_role( $role_name_plain, $role_name_plain);
+                    add_role( $role_name_plain, $role_name_display);
 
                     $getCurrentRole = get_role($role_name_plain);
                     if($role['user_role_permission']) {
@@ -230,6 +230,8 @@ class RolePermissionServiceProvider implements Provider
         if (!$valid) {
             return $valid;
         }
+
+        global $wp_roles;
         
         // get list of array indexes from $input
         // [ <= this fixes my IDE, it has problems with unmatched brackets
