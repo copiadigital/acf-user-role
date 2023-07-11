@@ -26,6 +26,7 @@ class RolePermissionServiceProvider implements Provider
 
     public function acf_user_role_admin_init() {
         global $wp_roles;
+
         // get current user
         $user = wp_get_current_user();
 
@@ -230,8 +231,6 @@ class RolePermissionServiceProvider implements Provider
         if (!$valid) {
             return $valid;
         }
-
-        global $wp_roles;
         
         // get list of array indexes from $input
         // [ <= this fixes my IDE, it has problems with unmatched brackets
